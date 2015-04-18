@@ -14,9 +14,6 @@ class ImageProcessing
 	//Image names for the main image object and the background.
 	private String _inputName;
 	
-	//Number of times the image has been saved this instance.
-	private int _timesSaved;
-	
 	//Whether or not we are using premultiplied alpha mode.
 	private boolean _premultiply;
 	
@@ -56,80 +53,6 @@ class ImageProcessing
 		_outputWidth = outputWidth;
 		_outputHeight = outputHeight;
 		_output = copyAndFormatImage(_image);
-	}
-	
-	/*
-	 * Opens an image with the specified imagename into a buffer.
-	 * @imageName: Path to the image to open.
-	 */
-	private BufferedImage openImage(String imageName)
-	{
-		//open the image and load into buffer.
-		BufferedImage image = null;
-		File inputFile = new File(imageName);
-		try {
-			image = ImageIO.read(inputFile);
-		} catch (IOException e) {
-			System.out.println("Could not read input image.");
-			return image;
-		}
-		
-		//convert type if needed.
-		if(image.getType() != _imageType)
-		{
-	        image = copyAndFormatImage(image);
-		}
-		return image;
-	}
-	
-	/*
-	 * Returns a copy of the image passed in.
-	 * 
-	 * @source: the source image to copy
-	 * 
-	 * @return: a copy of source.
-	 */
-	private BufferedImage copyAndFormatImage(BufferedImage source)
-	{
-		return copyAndFormatImage(source, source.getWidth(), source.getHeight());
-	}
-	
-	
-	/*
-	 * Returns a copy of the image passed in and scales up or down if needed.
-	 * 
-	 * @source: the source image to copy
-	 * @width/height: the size of the resulting copy.
-	 * 
-	 * @return: a copy of source, scaled to specified width and height.
-	 */
-	private BufferedImage copyAndFormatImage(BufferedImage source, int width, int height)
-	{
-		BufferedImage argbImage = new BufferedImage(width, height, _imageType);
-        for(int w = 0; w < width; w++)
-        {
-	        for(int h = 0; h < height; h++)
-	        {
-	        	argbImage.setRGB(w, h, getScaledPixel(source, width, height, w, h)); //TODO: handle transparent input
-	        }
-        }
-		return argbImage;
-	}
-	
-	/*
-	 * Returns how "different" the color is to the base as an alpha value. 
-	 * Closer the colors are, more transparent the resulting pixel will be.
-	 * 
-	 * @base_r/g/b: the base rgb components.
-	 * @r/g/b: the color we are currently looking at.
-	 * 
-	 * @return: the difference metric as alpha value.
-	 */
-	private int getColorDifference(int base_r, int base_g, int base_b, int r, int g, int b) {
-		//max brightness metric
-		return Math.max(Math.abs(base_r - r), Math.max(Math.abs(base_g - g), Math.abs(base_b - b))); 
-		//luminance metric
-    	//return (int) (0.2126 * Math.abs(base_r - r) + 0.7152 * Math.abs(base_g - g) + 0.0722 * Math.abs(base_b - b));
 	}
 	
 	/*
@@ -260,13 +183,19 @@ class ImageProcessing
 	/*
 	 * Saves the current image into a png file with a selected name.
 	 * 
-	 * @outName: name of the file to save.
+	 * @outName: filename to save as.
+	 * @qualifier: the string to insert at the end of the file name, before extension.
 	 * 
 	 * @return: returns whether save succeeded.
 	 */
-	public boolean save(String outName)
+	public boolean save(String outName, String qualifier)
 	{
         boolean success = true;
+        if(outName.equals("")) 
+        {
+        	outName = _inputName;
+        }
+        
 		if(outName.contains("."))
 		{
 			outName = outName.substring(0, outName.lastIndexOf('.'));
@@ -275,7 +204,7 @@ class ImageProcessing
 		try {
 			if(_output != null)
 			{
-		        File fileName = new File(outName + "_" + _timesSaved++ + ".png");
+		        File fileName = new File(outName + qualifier + ".png");
 				success &= ImageIO.write(_output, "png", fileName);
 			}
 			else 
@@ -292,11 +221,98 @@ class ImageProcessing
 	/*
 	 * Saves the current image into a png file.
 	 * 
+	 * @outName: filename to save as.
+	 * 
+	 * @return: returns whether save succeeded.
+	 */
+	public boolean save(String outName)
+	{
+		return save(outName, "");
+	}
+	
+	/*
+	 * Saves the current image into a png file.
+	 * 
 	 * @return: returns whether save succeeded.
 	 */
 	public boolean save()
 	{
-		return save(_inputName.substring(0, _inputName.lastIndexOf('.')) + "_default");
+		return save(_inputName, "_out");
+	}
+	
+	
+	/*
+	 * Opens an image with the specified imagename into a buffer.
+	 * @imageName: Path to the image to open.
+	 */
+	private BufferedImage openImage(String imageName)
+	{
+		//open the image and load into buffer.
+		BufferedImage image = null;
+		File inputFile = new File(imageName);
+		try {
+			image = ImageIO.read(inputFile);
+		} catch (IOException e) {
+			System.out.println("Could not read input image.");
+			return image;
+		}
+		
+		//convert type if needed.
+		if(image.getType() != _imageType)
+		{
+	        image = copyAndFormatImage(image);
+		}
+		return image;
+	}
+	
+	/*
+	 * Returns a copy of the image passed in.
+	 * 
+	 * @source: the source image to copy
+	 * 
+	 * @return: a copy of source.
+	 */
+	private BufferedImage copyAndFormatImage(BufferedImage source)
+	{
+		return copyAndFormatImage(source, source.getWidth(), source.getHeight());
+	}
+	
+	
+	/*
+	 * Returns a copy of the image passed in and scales up or down if needed.
+	 * 
+	 * @source: the source image to copy
+	 * @width/height: the size of the resulting copy.
+	 * 
+	 * @return: a copy of source, scaled to specified width and height.
+	 */
+	private BufferedImage copyAndFormatImage(BufferedImage source, int width, int height)
+	{
+		BufferedImage argbImage = new BufferedImage(width, height, _imageType);
+        for(int w = 0; w < width; w++)
+        {
+	        for(int h = 0; h < height; h++)
+	        {
+	        	argbImage.setRGB(w, h, getScaledPixel(source, width, height, w, h)); //TODO: handle transparent input
+	        }
+        }
+		return argbImage;
+	}
+	
+	/*
+	 * Returns how "different" the color is to the base as an alpha value. 
+	 * Closer the colors are, more transparent the resulting pixel will be.
+	 * 
+	 * @base_r/g/b: the base rgb components.
+	 * @r/g/b: the color we are currently looking at.
+	 * 
+	 * @return: the difference metric as alpha value.
+	 */
+	private int getColorDifference(int base_r, int base_g, int base_b, int r, int g, int b) {
+		//max brightness metric
+		return Math.max(Math.abs(base_r - r), Math.max(Math.abs(base_g - g), Math.abs(base_b - b))); 
+		//luminance metric
+    	//return (int) (0.2126 * Math.abs(base_r - r) + 0.7152 * Math.abs(base_g - g) + 0.0722 * Math.abs(base_b - b));
 	}
 	
 	/*

@@ -5,44 +5,26 @@ import java.util.HashMap;
 
 class Transparency
 {
+	private static final String NAME = "Transparency";
 	private static final String ARG_I = "-i";
 	private static final String ARG_O = "-o";
-	private static final String ARG_BG = "-bg";
-	private static final String ARG_PRE = "-pre";
-	private static final String ARG_BLEND = "-blendonly";
-	private static final String ARG_D = "-d";
+	private static final String ARG_BG = "-b";
+	private static final String ARG_PRE = "-p";
+	private static final String ARG_DIM = "-d";
+	private static final String ARG_COL = "-c";
 	private static final String ARG_HELP = "-?";
-	
-	private static void test()
-	{
-		ImageProcessing image4 = new ImageProcessing("X:\\Desktop\\TEST\\4.jpg", false, 0, 0);
-		image4.unblendImage(0xff000000);
-		image4.save();
-		image4.blendImage("X:\\Desktop\\TEST\\run.png");		
-		image4.save();
-		
-		ImageProcessing image1 = new ImageProcessing("X:\\Desktop\\TEST\\1.jpg", true, 0, 0);
-		image1.unblendImage(0xff000000);
-		image1.save();
-		image1.blendImage("X:\\Desktop\\TEST\\run.png");		
-		image1.save();
-		
-		ImageProcessing image2 = new ImageProcessing("X:\\Desktop\\TEST\\2.jpg", false, 0, 0);
-		image2.unblendImage(0xff000000);
-		image2.save();
-		image2.blendImage("X:\\Desktop\\TEST\\run.png");		
-		image2.save();
-		
-		ImageProcessing image3 = new ImageProcessing("X:\\Desktop\\TEST\\3.jpg", true, 0, 0);
-		image3.unblendImage(0xff000000);
-		image3.save();
-		image3.blendImage("X:\\Desktop\\TEST\\run.png");		
-		image3.save();
-	}
 	
 	private static void usage()
 	{
-		System.out.println("You did it wrong.");
+		System.out.printf("USAGE:\n");
+		System.out.printf("java %s %s inputFile [%s r g b] [%s outputFile] [%s bgFile1 bgFile2 ...] [%s] [%s width height]\n", NAME, ARG_I, ARG_COL, ARG_O, ARG_BG, ARG_PRE, ARG_DIM);
+		System.out.printf("%s\t\t\tPath to the input file.\n", ARG_I);
+		System.out.printf("%s\t\t\tThe RGB value to de-blend into transparency. Optional. Defaults to 0,0,0 (black).\n", ARG_COL);
+		System.out.printf("%s\t\t\tPath to the output file. Optional. Defaults to input file + \"_out\".\n", ARG_O);
+		System.out.printf("%s\t\t\tList of paths to background files to blend into in order. Optional.\n", ARG_BG);
+		System.out.printf("%s\t\t\tUse premultiplied argb processing. Optional.\n", ARG_PRE);
+		System.out.printf("%s\t\t\tDimensions of the output. Optional. Defaults to the dimensions of the input.\n", ARG_DIM);
+		System.out.println();
 	}
 	
 	private static Map<String, List<String>> getArgs(String[] args)
@@ -76,17 +58,17 @@ class Transparency
 	
 	public static void main(String[] args)
 	{
-		//test();
 		Map<String, List<String>> argumentMap = getArgs(args);
 		
 		boolean premult = false;
-		boolean blendOnly = false;
 		int width = 0;
 		int height = 0;
 		String inputName = "";
 		String outputName = "";
+		int argb = 0xff000000;
 		List<String> backgrounds = new ArrayList<String>();
 		
+		//check for input file.
 		if (!argumentMap.containsKey(ARG_I))
 		{
 			System.out.println("Input file not found.");
@@ -116,6 +98,32 @@ class Transparency
 					inputName = names.get(0);
 				}
 			}
+			else if(arg.equals(ARG_COL))
+			{
+				List<String> rgblist = argumentMap.get(arg);
+				if(rgblist.size() != 3) 
+				{
+					System.out.println("Invalid size argument.");
+					usage();
+					return;
+				}
+				else
+				{
+					try
+					{
+						int r = Integer.parseInt(rgblist.get(0));
+						int g = Integer.parseInt(rgblist.get(1));
+						int b = Integer.parseInt(rgblist.get(2));
+						argb = (0xff << 24) | (r << 16) | (g << 8) | (b);
+					}
+					catch (NumberFormatException e)
+					{
+						System.out.println("Invalid rgb argument.");
+						usage();
+						return;
+					}
+				}
+			}
 			else if(arg.equals(ARG_O))
 			{
 				List<String> names = argumentMap.get(arg);
@@ -134,7 +142,7 @@ class Transparency
 			{
 				backgrounds = argumentMap.get(arg);
 			}
-			else if(arg.equals(ARG_D))
+			else if(arg.equals(ARG_DIM))
 			{
 				List<String> sizes = argumentMap.get(arg);
 				if(sizes.size() != 2) 
@@ -158,10 +166,6 @@ class Transparency
 					}
 				}
 			}
-			else if(arg.equals(ARG_BLEND))
-			{
-				blendOnly = true;
-			}
 			else if(arg.equals(ARG_PRE))
 			{
 				premult = true;
@@ -174,18 +178,23 @@ class Transparency
 			}
 		}
 		
+		//initialize processor
 		ImageProcessing image = new ImageProcessing(inputName, premult, width, height);
+		
+		//make transparency
+		image.unblendImage(argb);
+		image.save(outputName, "_layer");
+		
+		//blend backgrounds
+		for(String bgName : backgrounds)
+		{
+			image.blendImage(bgName);
+		}
+		if(!backgrounds.isEmpty())
+		{
+			image.save(outputName, "_blended");
+		}
 	}
 }
 
 //TODO: scale mode blending for upscaling
-//TODO: parameters - 
-//			-i input file, -o output file     											(1)
-//			-bg background overlay file       											(1)
-//			-pre for premultiplied alpha (inconsistent with image editor formats...) 	(0)
-//		    -overlay to overlay an existing file directly.							 	(0)
-//			-osize specify output file dimensions									 	(2)
-//          -?																			(0)
-		
-//i o bg pre blendonly osize
-
