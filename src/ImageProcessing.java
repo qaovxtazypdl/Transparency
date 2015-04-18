@@ -52,7 +52,7 @@ class ImageProcessing
 		}
 		_outputWidth = outputWidth;
 		_outputHeight = outputHeight;
-		_output = copyAndFormatImage(_image);
+		_output = copyAndFormatImage(_image, _outputWidth, _outputHeight);
 	}
 	
 	/*

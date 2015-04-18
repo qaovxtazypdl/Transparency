@@ -58,8 +58,13 @@ class Transparency
 	
 	public static void main(String[] args)
 	{
-		Map<String, List<String>> argumentMap = getArgs(args);
+		if(args.length == 0)
+		{
+			usage();
+			return;
+		}
 		
+		Map<String, List<String>> argumentMap = getArgs(args);
 		boolean premult = false;
 		int width = 0;
 		int height = 0;
