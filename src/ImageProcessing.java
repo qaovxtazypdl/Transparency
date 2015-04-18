@@ -1,12 +1,14 @@
 import java.awt.image.*;
+import java.awt.*;
 import javax.imageio.ImageIO;
 import java.io.*;
 import java.lang.Math;
+import java.awt.geom.AffineTransform;
 
 class ImageProcessing
 {
 	//Image objects.
-	private BufferedImage _image, _bg, _output;
+	private BufferedImage _image, _bg;
 	
 	//output image size
 	private int _outputWidth, _outputHeight;
@@ -31,7 +33,6 @@ class ImageProcessing
 	 */
 	public ImageProcessing(String imageName, boolean premultiply, int outputWidth, int outputHeight)
 	{
-		//set premult flag
 		_premultiply = premultiply;
 		if(_premultiply)
 		{
@@ -42,17 +43,19 @@ class ImageProcessing
 			_imageType = BufferedImage.TYPE_INT_ARGB;
 		}
 		
-		_image = openImage(imageName);
+		_outputWidth = outputWidth;
+		_outputHeight = outputHeight;
+		
 		_inputName = imageName;
+		_image = openImage(imageName, _outputWidth, _outputHeight);
 		
 		if(outputWidth == 0 || outputHeight == 0)
 		{
-			outputWidth = _image.getWidth();
-			outputHeight = _image.getHeight();
+			_outputWidth = _image.getWidth();
+			_outputHeight = _image.getHeight();
 		}
-		_outputWidth = outputWidth;
-		_outputHeight = outputHeight;
-		_output = copyAndFormatImage(_image, _outputWidth, _outputHeight);
+
+		//_output = scaleAndFormatImage(_image, _outputWidth, _outputHeight);
 	}
 	
 	/*
@@ -72,7 +75,7 @@ class ImageProcessing
     	//for each pixel
         for(int w = 0; w < _outputWidth; w++) {
 	        for(int h = 0; h < _outputHeight; h++) {
-            	int argb = getScaledPixel(_image, _outputWidth, _outputHeight, w, h);
+            	int argb = _image.getRGB(w, h);
 
             	//get image argb
             	int a = (argb >>> 24) & 0xff;
@@ -117,7 +120,7 @@ class ImageProcessing
             	}
 
             	//enter the final pixel back into the output pixel
-            	_output.setRGB(w,h, argb);
+            	_image.setRGB(w,h, argb);
 	        }
         }
 	}
@@ -129,7 +132,7 @@ class ImageProcessing
 	 */
 	public void blendImage(String bgName) {
 		//opens the backgound image to blend into.
-		_bg = openImage(bgName);
+		_bg = openImage(bgName, _outputWidth, _outputHeight);
 		
 		if(_bg == null) return;
 		
@@ -139,14 +142,14 @@ class ImageProcessing
             	int argb = 0;
             	
             	//get background argb, scaled
-            	int bg_argb = getScaledPixel(_bg, _outputWidth, _outputHeight, w, h);
+            	int bg_argb = _bg.getRGB(w, h);
             	int bg_a = (bg_argb >>> 24) & 0xff;
             	int bg_r = (bg_argb >>> 16) & 0xff;
             	int bg_g = (bg_argb >>> 8) & 0xff;
             	int bg_b = (bg_argb) & 0xff;
             	
             	//get source argb, scaled.
-            	int src_argb = getScaledPixel(_output, _outputWidth, _outputHeight, w, h);
+            	int src_argb = _image.getRGB(w, h);
             	int src_a = (src_argb >>> 24) & 0xff;
             	int src_r = (src_argb >>> 16) & 0xff;
             	int src_g = (src_argb >>> 8) & 0xff;
@@ -160,6 +163,11 @@ class ImageProcessing
                 	int r = src_r + bg_r * (0xff - src_a) / 0xff;
                 	int g = src_g + bg_g * (0xff - src_a) / 0xff;
                 	int b = src_b + bg_b * (0xff - src_a) / 0xff;
+                	
+                	a = a > 0xff? 0xff : a;
+                	r = r > 0xff? 0xff : r;
+                	g = g > 0xff? 0xff : g;
+                	b = b > 0xff? 0xff : b;
                 	
                 	argb = (a << 24) | (r << 16) | (g << 8) | (b);
             	}
@@ -175,7 +183,7 @@ class ImageProcessing
             	}
             	
             	//enter the r' back into the pixel.
-            	_output.setRGB(w,h, argb);
+            	_image.setRGB(w,h, argb);
 	        }
         }
 	}
@@ -202,10 +210,10 @@ class ImageProcessing
 		}
 
 		try {
-			if(_output != null)
+			if(_image != null)
 			{
 		        File fileName = new File(outName + qualifier + ".png");
-				success &= ImageIO.write(_output, "png", fileName);
+				success &= ImageIO.write(_image, "png", fileName);
 			}
 			else 
 			{
@@ -243,9 +251,13 @@ class ImageProcessing
 	
 	/*
 	 * Opens an image with the specified imagename into a buffer.
+	 * Guarantees that the image has the correct size.
+	 * 
 	 * @imageName: Path to the image to open.
+	 * 
+	 * @return: the image that was opened.
 	 */
-	private BufferedImage openImage(String imageName)
+	private BufferedImage openImage(String imageName, int width, int height)
 	{
 		//open the image and load into buffer.
 		BufferedImage image = null;
@@ -257,26 +269,9 @@ class ImageProcessing
 			return image;
 		}
 		
-		//convert type if needed.
-		if(image.getType() != _imageType)
-		{
-	        image = copyAndFormatImage(image);
-		}
-		return image;
-	}
-	
-	/*
-	 * Returns a copy of the image passed in.
-	 * 
-	 * @source: the source image to copy
-	 * 
-	 * @return: a copy of source.
-	 */
-	private BufferedImage copyAndFormatImage(BufferedImage source)
-	{
-		return copyAndFormatImage(source, source.getWidth(), source.getHeight());
-	}
-	
+		if(width == 0 || height == 0) return image;
+		else return scaleAndFormatImage(image, width, height);
+	}	
 	
 	/*
 	 * Returns a copy of the image passed in and scales up or down if needed.
@@ -286,16 +281,17 @@ class ImageProcessing
 	 * 
 	 * @return: a copy of source, scaled to specified width and height.
 	 */
-	private BufferedImage copyAndFormatImage(BufferedImage source, int width, int height)
+	private BufferedImage scaleAndFormatImage(BufferedImage source, int width, int height)
 	{
+		double widthRatio = width / (double) source.getWidth();
+		double heightRatio = height / (double) source.getHeight();
+		
 		BufferedImage argbImage = new BufferedImage(width, height, _imageType);
-        for(int w = 0; w < width; w++)
-        {
-	        for(int h = 0; h < height; h++)
-	        {
-	        	argbImage.setRGB(w, h, getScaledPixel(source, width, height, w, h)); //TODO: handle transparent input
-	        }
-        }
+		
+        Graphics2D g = argbImage.createGraphics();
+        AffineTransform at = AffineTransform.getScaleInstance(widthRatio, heightRatio);
+        g.drawRenderedImage(source, at);
+        
 		return argbImage;
 	}
 	
@@ -313,18 +309,5 @@ class ImageProcessing
 		return Math.max(Math.abs(base_r - r), Math.max(Math.abs(base_g - g), Math.abs(base_b - b))); 
 		//luminance metric
     	//return (int) (0.2126 * Math.abs(base_r - r) + 0.7152 * Math.abs(base_g - g) + 0.0722 * Math.abs(base_b - b));
-	}
-	
-	/*
-	 * Gets the pixel in the corresponsing scaled location in the image. (no scale blending)
-	 * 
-	 * @image: the image souce for getting the pixels
-	 * @scaledMaxX/Y maximum width and height in the scaled coordinate system
-	 * @x/y pixel at x,y in the scaled coordinate system to retrieve.
-	 * 
-	 * @return: the argb value of the pixel selected.
-	 */
-	private int getScaledPixel(BufferedImage image, int scaledMaxX, int scaledMaxY, int x, int y) {
-		return image.getRGB(image.getWidth() * x / scaledMaxX, image.getHeight() * y / scaledMaxY);
 	}
 }
