@@ -54,8 +54,6 @@ class ImageProcessing
 			_outputWidth = _image.getWidth();
 			_outputHeight = _image.getHeight();
 		}
-
-		//_output = scaleAndFormatImage(_image, _outputWidth, _outputHeight);
 	}
 	
 	/*
@@ -266,11 +264,10 @@ class ImageProcessing
 			image = ImageIO.read(inputFile);
 		} catch (IOException e) {
 			System.out.println("Could not read input image.");
-			return image;
+			return null;
 		}
 		
-		if(width == 0 || height == 0) return image;
-		else return scaleAndFormatImage(image, width, height);
+		return scaleAndFormatImage(image, width, height);
 	}	
 	
 	/*
@@ -283,6 +280,12 @@ class ImageProcessing
 	 */
 	private BufferedImage scaleAndFormatImage(BufferedImage source, int width, int height)
 	{
+		if(width == 0 || height == 0)
+		{
+			width = source.getWidth();
+			height = source.getHeight();
+		}
+		
 		double widthRatio = width / (double) source.getWidth();
 		double heightRatio = height / (double) source.getHeight();
 		
