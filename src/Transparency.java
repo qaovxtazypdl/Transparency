@@ -5,12 +5,14 @@ class Transparency
 		ImageProcessing image = new ImageProcessing("X:\\Desktop\\TEST\\4.jpg", true);
 		image.RGBtoALPHA(0xff000000);
 		image.Save();
-		image.OverlayImage("X:\\Desktop\\TEST\\run.png");		
+		image.BlendImage("X:\\Desktop\\TEST\\run.png");		
 		image.Save();
 
 	}
 }
 
+//TODO: openImage instead of duplicated code
+//TODO: maybe more formats than png
 //TODO: optimize
 //TODO: better algorithm for scaling images. scale images. handle output size
 //TODO: parameters - 
