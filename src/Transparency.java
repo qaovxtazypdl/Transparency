@@ -13,6 +13,7 @@ class Transparency
 	private static final String ARG_PRE = "-p";
 	private static final String ARG_DIM = "-d";
 	private static final String ARG_COL = "-c";
+	private static final String ARG_NDB = "-n";
 	private static final String ARG_HELP = "-?";
 	
 	/*
@@ -32,6 +33,9 @@ class Transparency
 		System.out.printf("%s\t\t\tUse premultiplied argb processing. Optional.\n\n", ARG_PRE);
 		System.out.printf("%s\t\t\tDimensions of the output. Optional.\n", ARG_DIM);
 		System.out.printf("\t\t\tDefaults to the dimensions of the input.\n\n");
+		System.out.printf("%s\t\t\tDon't attempt to deblend image first. Instead, blend\n", ARG_NDB);
+		System.out.printf("\t\t\tinput directly with any backgrounds. Optional.\n\n");
+
 	}
 	
 	/*
@@ -80,6 +84,7 @@ class Transparency
 		
 		Map<String, List<String>> argumentMap = getArgs(args);
 		boolean premult = false;
+		boolean noDeblend = false;
 		int width = 0;
 		int height = 0;
 		String inputName = "";
@@ -189,6 +194,10 @@ class Transparency
 			{
 				premult = true;
 			}
+			else if(arg.equals(ARG_NDB))
+			{
+				noDeblend = true;
+			}
 			else
 			{
 				System.out.println("Invalid argument " + arg + ".");
@@ -201,8 +210,11 @@ class Transparency
 		ImageProcessing image = new ImageProcessing(inputName, premult, width, height);
 		
 		//make transparency
-		image.unblendImage(argb);
-		image.save(outputName, "_layer");
+		if(!noDeblend)
+		{
+			image.unblendImage(argb);
+			image.save(outputName, "_layer");
+		}
 		
 		//blend backgrounds
 		for(String bgName : backgrounds)
@@ -215,3 +227,5 @@ class Transparency
 		}
 	}
 }
+
+//implement handling transparent input.
