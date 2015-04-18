@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 class Transparency
 {
+	//argument constants.
 	private static final String NAME = "Transparency";
 	private static final String ARG_I = "-i";
 	private static final String ARG_O = "-o";
@@ -14,6 +15,9 @@ class Transparency
 	private static final String ARG_COL = "-c";
 	private static final String ARG_HELP = "-?";
 	
+	/*
+	 * Prints usage information.
+	 */
 	private static void usage()
 	{
 		System.out.printf("USAGE:\n");
@@ -30,6 +34,13 @@ class Transparency
 		System.out.printf("\t\t\tDefaults to the dimensions of the input.\n\n");
 	}
 	
+	/*
+	 * Gets arguments into a mapping between flag and arguments
+	 * 
+	 *@args: input argument array.
+	 *
+	 *@return: Returns a mapping between flag and arguments
+	 */
 	private static Map<String, List<String>> getArgs(String[] args)
 	{
 		Map<String, List<String>> argumentMap = new HashMap<String, List<String>>();
@@ -204,5 +215,3 @@ class Transparency
 		}
 	}
 }
-
-//TODO: scale mode blending for upscaling
