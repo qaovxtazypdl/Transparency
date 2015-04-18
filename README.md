@@ -19,3 +19,8 @@ java Transparency -i inputFile [-c r g b] [-o outputFile] [-b bgFile1 bgFile2 ..
 
 -n			Don't attempt to deblend image first. Instead, blend
 			input directly with any backgrounds. Optional.
+
+
+
+Current issues:
+If the input file is a file with transparency ... stuff goes wrong.
