@@ -3,15 +3,14 @@ class Transparency
 	public static void main(String[] args)
 	{
 		ImageProcessing image = new ImageProcessing("X:\\Desktop\\TEST\\4.jpg", true);
-		image.RGBtoALPHA(0xff000000);
-		image.Save();
-		image.BlendImage("X:\\Desktop\\TEST\\run.png");		
-		image.Save();
+		image.unblendImage(0xff000000);
+		image.save();
+		image.blendImage("X:\\Desktop\\TEST\\run.png");		
+		image.save();
 
 	}
 }
 
-//TODO: openImage instead of duplicated code
 //TODO: maybe more formats than png
 //TODO: optimize
 //TODO: better algorithm for scaling images. scale images. handle output size

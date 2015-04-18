@@ -27,7 +27,7 @@ class ImageProcessing
 	/*
 	 * Constructor. Creates the object with a starting image and a premultiply flag.
 	 * 
-	 * @imageName: the name of the initial image we are processing
+	 * @imageName: Path to the initial image to open.
 	 * @premultiply: a flag to indicate if we are using the premultiplied alpha ARGB mode.
 	 * 				 this mode is more efficient (slightly) but transparency not easily
 	 * 				 compatible with windows image editors I've tried.
@@ -45,42 +45,55 @@ class ImageProcessing
 			_imageType = BufferedImage.TYPE_INT_ARGB;
 		}
 		
-		//open the image and load into buffer.
-		_imageName = imageName;
-		_image = null;
-		File inputFile = new File(_imageName);
-		try {
-			_image = ImageIO.read(inputFile);
-		} catch (IOException e) {
-			System.out.println("Could not read input image.");
-			return;
-		}
-			
-		_height = _image.getHeight();
+		_image = openImage(imageName);
 		_width = _image.getWidth();
-		
-		//convert type if needed.
-		if(_image.getType() != _imageType)
-		{
-			BufferedImage argbImage = new BufferedImage(_width, _height, _imageType);
-	        for(int w = 0; w < _width; w++)
-	        {
-		        for(int h = 0; h < _height; h++)
-		        {
-		        	argbImage.setRGB(w, h, (_image.getRGB(w, h) | 0xff000000)); //will break on transparent input
-		        }
-	        }
-	        _image = argbImage;
-		}
+		_height = _image.getHeight();
+		_imageName = imageName;
 	}
 	
-
+	/*
+	 * Opens an image with the specified imagename into a buffer.
+	 * @imageName: Path to the image to open.
+	 */
+	private BufferedImage openImage(String imageName)
+	{
+		//open the image and load into buffer.
+		BufferedImage image = null;
+		File inputFile = new File(imageName);
+		try {
+			image = ImageIO.read(inputFile);
+		} catch (IOException e) {
+			System.out.println("Could not read input image.");
+			return image;
+		}
+			
+		int height = image.getHeight();
+		int width = image.getWidth();
+		
+		//convert type if needed.
+		if(image.getType() != _imageType)
+		{
+			BufferedImage argbImage = new BufferedImage(width, height, _imageType);
+	        for(int w = 0; w < width; w++)
+	        {
+		        for(int h = 0; h < height; h++)
+		        {
+		        	argbImage.setRGB(w, h, (image.getRGB(w, h) | 0xff000000)); //TODO:will break on transparent input
+		        }
+	        }
+	        image = argbImage;
+		}
+		return image;
+	}
+	
 	/*
 	 * Returns how "different" the color is to the base as an alpha value. 
 	 * Closer the colors are, more transparent the resulting pixel will be.
 	 * 
 	 * @base_r/g/b: the base rgb components.
 	 * @r/g/b: the color we are currently looking at.
+	 * 
+	 * @return: the difference metric as alpha value.
 	 */
 	private int getColorDifference(int base_r, int base_g, int base_b, int r, int g, int b) {
 		//max brightness metric
@@ -90,11 +103,11 @@ class ImageProcessing
 	}
 	
 	/*
-	 * De-blends the current image and makes a specified color gradient transparent.
+	 * Unblends the current image and makes a specified color gradient transparent.
 	 * 
 	 * @base_rgb: the main color to make transparent.
 	 */
-	public void RGBtoALPHA(int base_rgb) {
+	public void unblendImage(int base_rgb) {
 		if(_image == null) return;
 		
 		//get base argb
@@ -168,33 +181,13 @@ class ImageProcessing
 	 * 
 	 * @bgName: name of the image file to overlay over.
 	 */
-	public void BlendImage(String bgName) {
+	public void blendImage(String bgName) {
 		//opens the backgound image to blend into.
+		_bg = openImage(bgName);
+		_bgWidth = _image.getWidth();
+		_bgHeight = _image.getHeight();
 		_bgName = bgName;
-		_bg = null;
-		File inputFile = new File(_bgName);
-		try {
-			_bg = ImageIO.read(inputFile);
-		} catch (IOException e) {
-			System.out.println("Could not read input image.");
-			return;
-		}
-			
-		_bgHeight = _bg.getHeight();
-		_bgWidth = _bg.getWidth();
 		
-		if(_bg.getType() != _imageType)
-		{
-			BufferedImage argbImage = new BufferedImage(_bgWidth, _bgHeight, _imageType);
-	        for(int w = 0; w < _bgWidth; w++)
-	        {
-		        for(int h = 0; h < _bgHeight; h++)
-		        {
-		        	argbImage.setRGB(w, h, (_bg.getRGB(w, h) | 0xff000000)); //will break on transparent input
-		        }
-	        }
-	        _bg = argbImage;
-		}
 		if(_bg == null) return;
 		
 		//for each pixel
@@ -210,7 +203,7 @@ class ImageProcessing
             	int bg_b = (bg_argb) & 0xff;
             	
             	//get source argb, scaled.
-            	int src_argb = GetScaledPixel(_image, _bgWidth, _bgHeight, w, h);
+            	int src_argb = getScaledPixel(_image, _bgWidth, _bgHeight, w, h);
             	int src_a = (src_argb >>> 24) & 0xff;
             	int src_r = (src_argb >>> 16) & 0xff;
             	int src_g = (src_argb >>> 8) & 0xff;
@@ -253,8 +246,10 @@ class ImageProcessing
 	 * Saves the current image into a png file with a selected name.
 	 * 
 	 * @outName: name of the file to save.
+	 * 
+	 * @return: returns whether save succeeded.
 	 */
-	public boolean Save(String outName)
+	public boolean save(String outName)
 	{
         boolean success = true;
 		if(outName.contains("."))
@@ -281,14 +276,15 @@ class ImageProcessing
 	
 	/*
 	 * Saves the current image into a png file.
+	 * 
+	 * @return: returns whether save succeeded.
 	 */
-	public boolean Save()
+	public boolean save()
 	{
-		return Save(_imageName.substring(0, _imageName.lastIndexOf('.')) + "_default");
+		return save(_imageName.substring(0, _imageName.lastIndexOf('.')) + "_default");
 	}
 	
-	//get a better algorithm for zoomins.
-	private int GetScaledPixel(BufferedImage image, int scaledMaxX, int scaledMaxY, int x, int y) {
+	private int getScaledPixel(BufferedImage image, int scaledMaxX, int scaledMaxY, int x, int y) {
 		//TODO:
 		return image.getRGB(x, y);
 	}
