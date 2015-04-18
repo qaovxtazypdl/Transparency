@@ -17,14 +17,17 @@ class Transparency
 	private static void usage()
 	{
 		System.out.printf("USAGE:\n");
-		System.out.printf("java %s %s inputFile [%s r g b] [%s outputFile] [%s bgFile1 bgFile2 ...] [%s] [%s width height]\n", NAME, ARG_I, ARG_COL, ARG_O, ARG_BG, ARG_PRE, ARG_DIM);
-		System.out.printf("%s\t\t\tPath to the input file.\n", ARG_I);
-		System.out.printf("%s\t\t\tThe RGB value to de-blend into transparency. Optional. Defaults to 0,0,0 (black).\n", ARG_COL);
-		System.out.printf("%s\t\t\tPath to the output file. Optional. Defaults to input file + \"_out\".\n", ARG_O);
-		System.out.printf("%s\t\t\tList of paths to background files to blend into in order. Optional.\n", ARG_BG);
-		System.out.printf("%s\t\t\tUse premultiplied argb processing. Optional.\n", ARG_PRE);
-		System.out.printf("%s\t\t\tDimensions of the output. Optional. Defaults to the dimensions of the input.\n", ARG_DIM);
-		System.out.println();
+		System.out.printf("java %s %s inputFile [%s r g b] [%s outputFile] [%s bgFile1 bgFile2 ...] [%s] [%s width height]\n\n", NAME, ARG_I, ARG_COL, ARG_O, ARG_BG, ARG_PRE, ARG_DIM);
+		System.out.printf("%s\t\t\tPath to the input file.\n\n", ARG_I);
+		System.out.printf("%s\t\t\tThe RGB value to de-blend into transparency.\n", ARG_COL);
+		System.out.printf("\t\t\tOptional. Defaults to 0,0,0 (black).\n\n");
+		System.out.printf("%s\t\t\tPath to the output file. Optional.\n", ARG_O);
+		System.out.printf("\t\t\tDefaults to input file + \"_out\".\n\n");
+		System.out.printf("%s\t\t\tList of paths to background files to blend into\n", ARG_BG);
+		System.out.printf("\t\t\tin order. Optional.\n\n");
+		System.out.printf("%s\t\t\tUse premultiplied argb processing. Optional.\n\n", ARG_PRE);
+		System.out.printf("%s\t\t\tDimensions of the output. Optional.\n", ARG_DIM);
+		System.out.printf("\t\t\tDefaults to the dimensions of the input.\n\n");
 	}
 	
 	private static Map<String, List<String>> getArgs(String[] args)
@@ -108,7 +111,7 @@ class Transparency
 				List<String> rgblist = argumentMap.get(arg);
 				if(rgblist.size() != 3) 
 				{
-					System.out.println("Invalid size argument.");
+					System.out.println("Invalid rgb argument.");
 					usage();
 					return;
 				}
