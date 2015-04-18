@@ -1,7 +1,5 @@
-# Transparency
-Small tool that makes an image transparent by hue. Option to overlay resulting file over a background.
-
-USAGE: java Transparency -i inputFile [-c r g b] [-o outputFile] [-b bgFile1 bgFile2 ...] [-p] [-d width height]
+USAGE:
+java Transparency -i inputFile [-c r g b] [-o outputFile] [-b bgFile1 bgFile2 ...] [-p] [-d width height]
 
 -i			Path to the input file.
 
@@ -19,4 +17,5 @@ USAGE: java Transparency -i inputFile [-c r g b] [-o outputFile] [-b bgFile1 bgF
 -d			Dimensions of the output. Optional.
 			Defaults to the dimensions of the input.
 
-A better method of scaling should be implemented in the future.
+-n			Don't attempt to deblend image first. Instead, blend
+			input directly with any backgrounds. Optional.
