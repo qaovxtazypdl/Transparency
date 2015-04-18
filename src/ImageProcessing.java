@@ -12,7 +12,7 @@ class ImageProcessing
 	private int _outputWidth, _outputHeight;
 	
 	//Image names for the main image object and the background.
-	private String _imageName;
+	private String _inputName;
 	
 	//Number of times the image has been saved this instance.
 	private int _timesSaved;
@@ -22,35 +22,6 @@ class ImageProcessing
 	
 	//The data type of the image. ARGB or ARGB + PREMULTIPLIED
 	private int _imageType;
-	
-	/*
-	 * Constructor. Creates the object with a starting image and a premultiply flag.
-	 * 
-	 * @imageName: Path to the initial image to open.
-	 * @premultiply: a flag to indicate if we are using the premultiplied alpha ARGB mode.
-	 * 				 this mode is more efficient (slightly) but transparency not easily
-	 * 				 compatible with windows image editors I've tried.
-	 */
-	public ImageProcessing(String imageName, boolean premultiply)
-	{
-		//set premult flag
-		_premultiply = premultiply;
-		if(_premultiply)
-		{
-			_imageType = BufferedImage.TYPE_INT_ARGB_PRE;
-		}
-		else
-		{
-			_imageType = BufferedImage.TYPE_INT_ARGB;
-		}
-		
-		_image = openImage(imageName);
-		_imageName = imageName;
-		
-		_outputWidth = _image.getWidth();
-		_outputHeight = _image.getHeight();
-		_output = new BufferedImage(_image.getWidth(), _image.getHeight(), _imageType);
-	}
 	
 	/*
 	 * Constructor. Creates the object with a starting image and a premultiply flag.
@@ -75,11 +46,16 @@ class ImageProcessing
 		}
 		
 		_image = openImage(imageName);
-		_imageName = imageName;
+		_inputName = imageName;
 		
+		if(outputWidth == 0 || outputHeight == 0)
+		{
+			outputWidth = _image.getWidth();
+			outputHeight = _image.getHeight();
+		}
 		_outputWidth = outputWidth;
 		_outputHeight = outputHeight;
-		_output = new BufferedImage(_outputWidth, _outputHeight, _imageType);
+		_output = copyAndFormatImage(_image);
 	}
 	
 	/*
@@ -97,24 +73,47 @@ class ImageProcessing
 			System.out.println("Could not read input image.");
 			return image;
 		}
-			
-		int height = image.getHeight();
-		int width = image.getWidth();
 		
 		//convert type if needed.
 		if(image.getType() != _imageType)
 		{
-			BufferedImage argbImage = new BufferedImage(width, height, _imageType);
-	        for(int w = 0; w < width; w++)
-	        {
-		        for(int h = 0; h < height; h++)
-		        {
-		        	argbImage.setRGB(w, h, (image.getRGB(w, h) | 0xff000000)); //TODO:will break on transparent input
-		        }
-	        }
-	        image = argbImage;
+	        image = copyAndFormatImage(image);
 		}
 		return image;
+	}
+	
+	/*
+	 * Returns a copy of the image passed in.
+	 * 
+	 * @source: the source image to copy
+	 * 
+	 * @return: a copy of source.
+	 */
+	private BufferedImage copyAndFormatImage(BufferedImage source)
+	{
+		return copyAndFormatImage(source, source.getWidth(), source.getHeight());
+	}
+	
+	
+	/*
+	 * Returns a copy of the image passed in and scales up or down if needed.
+	 * 
+	 * @source: the source image to copy
+	 * @width/height: the size of the resulting copy.
+	 * 
+	 * @return: a copy of source, scaled to specified width and height.
+	 */
+	private BufferedImage copyAndFormatImage(BufferedImage source, int width, int height)
+	{
+		BufferedImage argbImage = new BufferedImage(width, height, _imageType);
+        for(int w = 0; w < width; w++)
+        {
+	        for(int h = 0; h < height; h++)
+	        {
+	        	argbImage.setRGB(w, h, getScaledPixel(source, width, height, w, h)); //TODO: handle transparent input
+	        }
+        }
+		return argbImage;
 	}
 	
 	/*
@@ -297,7 +296,7 @@ class ImageProcessing
 	 */
 	public boolean save()
 	{
-		return save(_imageName.substring(0, _imageName.lastIndexOf('.')) + "_default");
+		return save(_inputName.substring(0, _inputName.lastIndexOf('.')) + "_default");
 	}
 	
 	/*
