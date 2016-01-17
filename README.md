@@ -1,6 +1,26 @@
-USAGE:
-java Transparency -i inputFile [-c r g b] [-o outputFile] [-b bgFile1 bgFile2 ...] [-p] [-d width height]
+download: https://www.dropbox.com/s/i2zohq8oa0jmcop/Transparency.jar?dl=0
 
+Demo
+=========
+java -jar Transparency.jar -i Feathers.png -c 0 0 255 -b background.jpg
+
+Source feather
+![demo before](http://i.imgur.com/LvC6FFP.png)
+
+Isolated foreground:
+![demo after](http://i.imgur.com/S6OBofz.png)
+
+Blended into a background image:
+![demo after](http://i.imgur.com/xEZ8WxW.png)
+
+Mileage may vary. Best results when background is solid colors, and differentiable from foreground easily.
+
+
+USAGE:
+=========
+java Transparency -i inputFile [-c r g b] [-o outputFile] [-b bgFile1 bgFile2 ...] [-p] [-d width height]
+or
+java -jar Transparency.jar -i inputFile [-c r g b] [-o outputFile] [-b bgFile1 bgFile2 ...] [-p] [-d width height] if you have a .jar
 -i			Path to the input file.
 
 -c			The RGB value to de-blend into transparency.
